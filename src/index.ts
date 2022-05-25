@@ -1,6 +1,7 @@
 import { credentials, Metadata } from '@grpc/grpc-js';
 import type {
   Client,
+  PromiseClient,
   MarketdataType,
   OperationsType,
   OrdersType,
@@ -11,6 +12,7 @@ import type {
 import { PROTO_PATH } from './constants';
 import { load } from './load';
 import { InstrumentsService } from './services/InstrumentsService';
+import { promisifyService } from './utils';
 
 export const { SandboxService } = load<SandboxType>(PROTO_PATH + 'sandbox.proto');
 export const { UsersService } = load<UsersType>(PROTO_PATH + 'users.proto');
@@ -31,26 +33,27 @@ interface OpenAPIClientOptions {
 class OpenAPIClient {
   token: string;
   url: string;
-  instruments: Client<typeof InstrumentsService>;
+
+  instruments: PromiseClient<typeof InstrumentsService>;
   ordersStream: Client<typeof OrdersStreamService>;
-  orders: Client<typeof OrdersService>;
-  operations: Client<typeof OperationsService>;
+  orders: PromiseClient<typeof OrdersService>;
+  operations: PromiseClient<typeof OperationsService>;
   marketDataStream: Client<typeof MarketDataStreamService>;
-  marketData: Client<typeof MarketDataService>;
-  usersService: Client<typeof UsersService>;
-  stopOrders: Client<typeof StopOrdersService>;
-  sandbox: Client<typeof SandboxService>;
+  marketData: PromiseClient<typeof MarketDataService>;
+  usersService: PromiseClient<typeof UsersService>;
+  stopOrders: PromiseClient<typeof StopOrdersService>;
+  sandbox: PromiseClient<typeof SandboxService>;
 
   constructor(options: OpenAPIClientOptions) {
     this.token = options.token;
     this.url = options.url || 'invest-public-api.tinkoff.ru:443';
 
-    const providedMetadata = options.metadata || {}
+    const providedMetadata = options.metadata || {};
 
     const metadata = new Metadata();
     metadata.add('Authorization', 'Bearer ' + this.token);
     for (const providedMetadataKey in providedMetadata) {
-      metadata.add(providedMetadataKey, providedMetadata[providedMetadataKey])
+      metadata.add(providedMetadataKey, providedMetadata[providedMetadataKey]);
     }
 
     const ssl_creds = credentials.combineChannelCredentials(
@@ -58,15 +61,15 @@ class OpenAPIClient {
       credentials.createFromMetadataGenerator((_: any, callback: any) => callback(null, metadata))
     );
 
-    this.instruments = new InstrumentsService(this.url, ssl_creds);
+    this.instruments = promisifyService(new InstrumentsService(this.url, ssl_creds));
     this.ordersStream = new OrdersStreamService(this.url, ssl_creds);
     this.marketDataStream = new MarketDataStreamService(this.url, ssl_creds);
-    this.marketData = new MarketDataService(this.url, ssl_creds);
-    this.usersService = new UsersService(this.url, ssl_creds);
-    this.orders = new OrdersService(this.url, ssl_creds);
-    this.operations = new OperationsService(this.url, ssl_creds);
-    this.stopOrders = new StopOrdersService(this.url, ssl_creds);
-    this.sandbox = new SandboxService(this.url, ssl_creds);
+    this.marketData = promisifyService(new MarketDataService(this.url, ssl_creds));
+    this.usersService = promisifyService(new UsersService(this.url, ssl_creds));
+    this.orders = promisifyService(new OrdersService(this.url, ssl_creds));
+    this.operations = promisifyService(new OperationsService(this.url, ssl_creds));
+    this.stopOrders = promisifyService(new StopOrdersService(this.url, ssl_creds));
+    this.sandbox = promisifyService(new SandboxService(this.url, ssl_creds));
   }
 }
 
