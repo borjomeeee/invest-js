@@ -32,10 +32,10 @@
     "ts-node": "^8.8.1"
   },
   "dependencies": {
-    "@grpc/grpc-js": "^1.5.0",
+    "@grpc/grpc-js": "^1.6.7",
     "@grpc/proto-loader": "^0.6.9",
-    "grpc-tools": "^1.11.2",
     "fsevents": "^2.0.7",
+    "grpc-tools": "^1.11.2",
     "prettier": "^2.0.5",
     "tslib": "^2.0.0",
     "typescript": "^4.3.4"
